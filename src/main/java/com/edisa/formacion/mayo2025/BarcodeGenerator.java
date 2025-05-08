@@ -14,7 +14,6 @@ public class BarcodeGenerator {
 
     public static void main(String[] args) {
         if (args.length < 3) {
-
             System.err.println("Example formats: QR_CODE, EAN_13, CODE_128");
             return;
         }
