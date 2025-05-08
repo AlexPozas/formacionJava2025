@@ -1,8 +1,27 @@
 package com.edisa.formacion.mayo2025;
 
-public class Main {
-    public static void main(String[] args) {
-        System.out.println("Numero de argumentos"+String.valueOf(args.length));
-        System.out.println("Hello world! ");
+
+import io.dropwizard.Application;
+import io.dropwizard.setup.Bootstrap;
+import io.dropwizard.setup.Environment;
+
+
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+
+public class Main extends Application<DropWizardConfiguration> {
+    public static void main(String[] args) throws Exception {
+        new Main().run(args);
+
+    }
+    @Override
+    public void initialize(Bootstrap<DropWizardConfiguration> bootstrap) {
+        // Configuración adicional si es necesaria
+    }
+
+    @Override
+    public void run(DropWizardConfiguration configuration, Environment environment) {
+        final Recursos resource = new Recursos();
+        environment.jersey().register(resource);
     }
 }
