@@ -38,7 +38,7 @@ public class BarcodeGenerator {
                 throw new IOException("The directory does not exist: " + path.getParent());
             }
 
-            MatrixToImageWriter.writeToPath(bitMatrix, "JPG", path);
+            MatrixToImageWriter.writeToPath(bitMatrix, "JPEG", path);
             System.out.println("Barcode image generated successfully at: " + outputPath);
 
         } catch (IllegalArgumentException e) {

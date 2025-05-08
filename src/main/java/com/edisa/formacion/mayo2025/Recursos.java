@@ -1,16 +1,25 @@
 package com.edisa.formacion.mayo2025;
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.WriterException;
+import com.google.zxing.*;
+import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.multi.GenericMultipleBarcodeReader;
+import com.google.zxing.multi.MultipleBarcodeReader;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 
+import javax.imageio.ImageIO;
 import javax.ws.rs.*;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Paths;
+import java.util.*;
 
 @Path("/api")
 @Produces(MediaType.APPLICATION_JSON)
@@ -108,6 +117,54 @@ public class Recursos {
         } catch (WriterException | IOException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Error generando el código de barras: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @POST
+    @Path("/detectar")
+    @Consumes({ "image/jpeg", "image/png" })
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response detectarCodigosDesdeImagen(InputStream inputImage) {
+        try {
+            BufferedImage bufferedImage = ImageIO.read(inputImage);
+            if (bufferedImage == null) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("{\"error\":\"No se pudo leer la imagen\"}")
+                        .build();
+            }
+
+            LuminanceSource source = new BufferedImageLuminanceSource(bufferedImage);
+            BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+
+            MultiFormatReader reader = new MultiFormatReader();
+            GenericMultipleBarcodeReader multiReader = new GenericMultipleBarcodeReader(reader);
+
+            Result[] resultados = multiReader.decodeMultiple(bitmap);
+
+            List<Map<String, String>> codigos = new ArrayList<>();
+            for (Result resultado : resultados) {
+                Map<String, String> codigo = new HashMap<>();
+                codigo.put("texto", resultado.getText());
+                codigo.put("formato", resultado.getBarcodeFormat().toString());
+                codigos.add(codigo);
+            }
+
+            Map<String, Object> respuesta = new HashMap<>();
+            respuesta.put("cantidad", codigos.size());
+            respuesta.put("codigos", codigos);
+
+            return Response.ok(respuesta).build();
+
+        } catch (NotFoundException e) {
+            // No se detectó ningún código
+            Map<String, Object> respuestaVacia = new HashMap<>();
+            respuestaVacia.put("cantidad", 0);
+            respuestaVacia.put("codigos", new ArrayList<>());
+            return Response.ok(respuestaVacia).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"" + e.getMessage() + "\"}")
                     .build();
         }
     }
